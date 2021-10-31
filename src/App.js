@@ -13,7 +13,7 @@ function App() {
   const [selectedBoss, setSelectedBoss] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredClasses, setFilteredClasses] = useState(classSpecs.filter((cs,i) => ((1+i) % 3 == 0) ? true : false).map(spec => {return {id: spec.id, name: spec.overallClass, selected: true}}))
-
+  const audio = new Audio("/sounds/arrenjinsardamiyjd.ogg");
   const updateClassFilter = (overallClass) => {
     let tempfilt = [];
     for (var i=0; i<filteredClasses.length; i++){
@@ -60,7 +60,7 @@ function App() {
         height: "166px",
         paddingTop: 16,
       }}>
-        <img style={{height:150}} src="/img/catalogo.png" />
+        <img onClick={() => audio.play()} style={{height:150, cursor: "pointer"}} src="/img/catalogo.png" />
       </div>
       <div style={{display:"grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr 1fr 1fr"}}>
         {
