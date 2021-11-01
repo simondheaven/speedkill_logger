@@ -182,22 +182,42 @@ const classSpecs = [
 
 ]
 
+const centerAlign = (text) => {
+  let halfLength = text.length /2;
+  let output = text;
+  while(output.length - halfLength < 50){
+    output = " "+output
+  }
+  while(output.length < 99){
+    output += " ";
+  }
+  return "|"+output+"|"
+}
+
 function showTitle() {
+  let hashes = "";
+  for(var i=0; i< 99; i++){
+    hashes += "#"
+  }
+  hashes = "|"+hashes+"|"
   console.clear();
-  console.info("# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #")
-  console.info("");
-  console.info("         S P E E D K I L L   L O G   G E N E R A T I O N   S C R I P T ");
-  console.info("");
-  console.info("                                  v2.0");
-  console.info("");
-  console.info("                               By Octavo");
-  console.info("");
-  console.info("# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #")
+  console.info(hashes)
+  console.info(centerAlign("  "));
+  console.info(centerAlign("S P E E D K I L L   L O G   G E N E R A T I O N   S C R I P T "));
+  console.info(centerAlign("  "));
+  console.info(centerAlign("v2.0"));
+  console.info(centerAlign("  "));
+  console.info(centerAlign("by Octavo"));
+  console.info(centerAlign("  "));
+  console.info(hashes)
   console.info("");
 }
 
 function showBossProgress(bossIndex,specIndex) {
+  console.info((specIndex % 3 == 0 ? centerAlign(" - ") : specIndex % 2 == 0 ? centerAlign(" / ") : centerAlign(" \\ ")).replace("|", " ").replace("|", " "))
+  console.info("");
   console.info("Scanning boss pages...");
+  console.info("");
   if(bossIndex == 0){
     console.info("This may take a while, please be patient...")
   }
@@ -207,38 +227,42 @@ function showBossProgress(bossIndex,specIndex) {
   if(bossIndex == 2){
     console.info("Still going to be a while mate...")
   }
-  if(bossIndex > 2){
+  if(bossIndex == 3){
     console.info("Seriously fam... this shit takes ages...")
+  }
+  if(bossIndex == 4){
+    console.info("Are you even still here?")
+  }
+  if(bossIndex == 5){
+    console.info("I hope the tea was nice. Maybe it's time for another?")
+  }
+  if(bossIndex > 5){
+    console.info("Nearly there now!")
   }
   console.info("")
   let actionNumber = (bossIndex * classSpecs.length) + 1 + specIndex;
-  console.info("Action "+actionNumber+" of "+(bosses.length * classSpecs.length))
-  let loader = [];
-  let specLoader = [];
-  for(var i=0; i<specIndex; i++){
-    if(i == -1 + specIndex){
-      specLoader.push(">");
+  let maxNumber = bosses.length * classSpecs.length;
+  //console.info("Action "+actionNumber+" of "+(bosses.length * classSpecs.length))
+  let percentage = (actionNumber / maxNumber) * 100;
+
+  let spaces = ""
+
+  let pbar = [];
+  for(var i=0; i<99; i++){
+    if(i < 48){
+      spaces += " "
+    }
+    if(i < Math.floor(percentage)){
+      pbar.push("=")
+    } else if(i == Math.floor(percentage)){
+      pbar.push(">")
     } else {
-      specLoader.push("=")
+      pbar.push("-")
     }
   }
-  for(var i=0; i<bossIndex; i++){
-    if(i == -1 + bossIndex){
-      loader.push(">");
-    } else {
-      loader.push("=")
-    }
-  }
-  while(loader.length < bosses.length){
-    loader.push("-")
-  }
-  while(specLoader.length < classSpecs.length){
-    specLoader.push("-")
-  }
-  console.info("")
-  console.info("Specs per boss: |" + specLoader.join("")+"|")
-  console.info("")
-  console.info("Bosses: |" + loader.join("")+"|")
+  console.info("|"+pbar.join("")+"|")
+  console.info(spaces + ((Math.floor(percentage) < 10) ? "  " : (Math.floor(percentage)) < 100 ? " " : "") + Math.floor(percentage)+"%");
+
 }
 
 function getIndicesOf(searchStr, str, caseSensitive) {
@@ -285,7 +309,7 @@ async function start() {
       showBossProgress(i,x);
     }
   }
-  console.log(JSON.stringify(bosses))
+  //console.log(JSON.stringify(bosses))
   showTitle();
   console.info("Scraping complete, authoring data file and starting application.")
   fs.unlink('./src/generated/index.js', function (err) {
@@ -295,7 +319,7 @@ async function start() {
   });
   fs.appendFile('./src/generated/index.js', "export const generated = "+ JSON.stringify(bosses.map(boss => {return {bossID: boss.id, ranks: boss.ranks}})), function (err) {
     if (err) throw err;
-    console.info('Html generated. Process complete.');
+    console.info('Html generated. Process complete. Launching interface.');
   });
 }
 
