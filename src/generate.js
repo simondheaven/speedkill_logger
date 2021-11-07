@@ -1,5 +1,6 @@
 const axios = require("axios")
 var fs = require('fs');
+const request = require('request');
 
 const bosses = [
   {
@@ -282,6 +283,77 @@ function getIndicesOf(searchStr, str, caseSensitive) {
     return indices;
 }
 
+let objs = []
+
+var requestAsync = function({url, bossID, specID}) {
+    return new Promise((resolve, reject) => {
+        var req = request(url, (err, response, body) => {
+            if (err) return reject(err, response, body);
+            resolve({body: body, bossID: bossID, specID: specID});
+        });
+    });
+};
+
+let max = 0;
+let pIA = 1;
+
+var parseInnerAsync = (index, item) => {
+  return new Promise((resolve, reject) => {
+    let data = {data: item.body};
+    let indexOfSearchTerm = index;
+    let temp = data.data.split("").reverse().join("");
+    let reverseIndexOfObjectStart = temp.substr(temp.length - indexOfSearchTerm).indexOf("{");
+    let indexOfObjectStart = indexOfSearchTerm - reverseIndexOfObjectStart -1;
+    let indexOfObjectEnd = data.data.substr(indexOfObjectStart).indexOf("}") + 1;
+    let rankOutput = JSON.parse(data.data.substr(indexOfObjectStart, indexOfObjectEnd));
+    rankOutput.classID = item.specID;
+    rankOutput.bossID = item.bossID;
+    bosses.find(boss => boss.id == item.bossID).ranks.push(rankOutput);
+    resolve(true);
+    pIA++;
+    let percentage = Math.floor(((pIA) / max) * 100)
+    showTitle();
+    let spaces = "";
+    let numOfSpaces = percentage;
+    for(var x=0; x<numOfSpaces; x++){
+      spaces+="="
+    }
+    console.info(centerAlign("Parsing records: "+pIA+" / "+max))
+    console.info(centerAlign("   " +percentage+"%  "))
+    console.info(centerAlign(spaces.length > 0 ? spaces : "     "))
+
+  })
+}
+
+var parseAsync = (item) => {
+  return new Promise((resolve, reject) => {
+    let data = {data: item.body};
+    var indices = getIndicesOf("Speedkill", data.data, true);
+    resolve({item: item, indices: indices})
+  })
+}
+
+var getParallel = async function() {
+    //transform requests into Promises, await all
+    try {
+      showTitle();
+      console.info(centerAlign("Fetching data from urls..."))
+        var dataComponent = await Promise.all(objs.map(requestAsync));
+    } catch (err) {
+        console.error(err);
+    }
+    showTitle();
+    console.info(centerAlign("Identifying individual records..."))
+    var parsed = await Promise.all(dataComponent.map(parseAsync))
+    for(var i=0; i<parsed.length; i++){
+      max += parsed[i].indices.length;
+    }
+    var next = await Promise.all(parsed.map(p => p.indices.map(i => parseInnerAsync(i,p.item))))
+    console.log("inner parsed")
+}
+
+
+
 
 async function start() {
   showTitle();
@@ -290,8 +362,13 @@ async function start() {
   //  if(i > 0) continue;
     bosses[i].ranks = [];
     for(var x=0; x<classSpecs.length; x++){
-      let data = await axios.get(bosses[i].url+classSpecs[x].bossKillUrlSuffix);
-      var indices = getIndicesOf("Speedkill", data.data, true);
+      objs.push({
+        url: bosses[i].url+classSpecs[x].bossKillUrlSuffix,
+        bossID: bosses[i].id,
+        specID: classSpecs[x].id
+      })
+    /*  let data = await axios.get(bosses[i].url+classSpecs[x].bossKillUrlSuffix);
+      var indices = getIndicesOf("position", data.data, true);
       if(indices.length > 0){
         for(var z=0; z<indices.length; z++){
           let indexOfCharName = indices[z]
@@ -306,9 +383,11 @@ async function start() {
         }
       }
       showTitle();
-      showBossProgress(i,x);
+      showBossProgress(i,x);*/
     }
   }
+  await getParallel();
+  //return true
   //console.log(JSON.stringify(bosses))
   showTitle();
   console.info("Scraping complete, authoring data file and starting application.")

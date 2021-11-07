@@ -12,6 +12,9 @@ import moment from 'moment'
 function App() {
   const [selectedBoss, setSelectedBoss] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
+  const [results, setResults] = useState([])
+  const [pagination, setPagination] = useState(0)
+  const [paginationColumns, setPaginationColumns] = useState("1fr")
   const [filteredClasses, setFilteredClasses] = useState(classSpecs.filter((cs,i) => ((1+i) % 3 == 0) ? true : false).map(spec => {return {id: spec.id, name: spec.overallClass, selected: true}}))
   const audio = new Audio("/sounds/arrenjinsardamiyjd.ogg");
   const updateClassFilter = (overallClass) => {
@@ -24,6 +27,36 @@ function App() {
     }
     setFilteredClasses(tempfilt)
   }
+
+  useEffect(()=>{
+    let depth = []
+    let entireList = generated.find(entry => entry.bossID == selectedBoss).ranks.filter(
+      rank => searchFilter(rank)
+    ).filter(
+      rank => classFilter(rank)
+    ).sort((a,b) => a.position == b.position ? a.name > b.name ? 1 : -1 : a.position > b.position ? 1 : -1);
+    let paginated = []
+    let pcs = ""
+    for(var i=0; i<entireList.length; i++){
+      paginated.push(entireList[i]);
+      if(i> 0 && i%9 == 0){
+        depth.push(paginated);
+        paginated = [];
+        pcs += " 1fr"
+      }
+    }
+    if(paginated.length > 0){
+      depth.push(paginated)
+      pcs += " 1fr"
+    }
+    if(depth.length == 0){
+      setPagination(0)
+    } else if(pagination + 1 > depth.length){
+      setPagination( depth.length -1)
+    }
+    setPaginationColumns(pcs.substr(1))
+    setResults(depth)
+  },[searchTerm, selectedBoss, filteredClasses])
 
   const millisToMinutesAndSeconds = (millis) => {
   var minutes = Math.floor(millis / 60000);
@@ -84,17 +117,15 @@ function App() {
         </div>
       </div>
       <div style={{padding: 16}}>
+{
+  results.length > 0 &&
+  <div style={{display:"grid", gridTemplateColumns: paginationColumns, marginBottom: 24}}>
+    {results.length > 0 && results.map((page, i) => <div onClick={() => setPagination(i)} style={{height: 48, width: "100%", cursor: "pointer",backgroundColor: (pagination == i) ? "rgba(0,0,0,0.2)" : "transparent"}}><p style={{color:"white",textShadow: "-1px -1px 3px rgba(0, 0, 0, 1),2px 2px 3px rgba(0, 0, 0, 1)"}}>{1+i}</p></div>)}
+  </div>
+}
+
     {
-      /*
-      classSpecs.map(spec => <div style={{display:"grid", gridTemplateColumns:"1fr 4fr 1fr", backgroundImage: "url("+spec.specImage+")", backgroundSize:"cover", marginBottom: 16}}>
-                              <AvatarFrame character={{name: "Orctavo"}} classSpec={spec} />
-                              <div>-</div>
-                              <CircularProgress label={"34 / 300"} value={90} title={"Rank in spec"} classSpec={spec} />
-                            </div>)
-                            */
-    }
-    {
-      generated.find(entry => entry.bossID == selectedBoss).ranks.filter(rank => searchFilter(rank)).filter(rank => classFilter(rank)).sort((a,b) => a.position > b.position ? 1 : -1).map(rank => {
+      results[pagination] && results[pagination].length > 0 && results[pagination].map(rank => {
         const spec = classSpecs.find(cspec => cspec.id == rank.classID)
         return (
           <div style={{display:"grid", gridTemplateColumns:"1fr 4fr 1fr", backgroundImage: "url("+spec.specImage+")", backgroundSize:"cover", marginBottom: 16}}>
