@@ -22,7 +22,7 @@ const AvatarFrame = ({character, classSpec}) => {
         <h5 style={{color: "red",paddingTop: 3,}}>{classSpec.overallClass.split(" ").map(word => word[0])}</h5>
       </div>
       <div style={{position:"relative",top: -16, background: "linear-gradient(45deg,transparent,"+classSpec.colour+","+classSpec.secondColour+",transparent)", opacity: 0.8}}>
-        <h4 style={{color:"white", textShadow: "-1px -1px 3px rgba(0, 0, 0, 1),2px 2px 3px rgba(0, 0, 0, 1)"}}>{classSpec.overallClass}</h4>
+        <h4 style={{color:"white", textShadow: "-1px -1px 3px rgba(0, 0, 0, 1),2px 2px 3px rgba(0, 0, 0, 1)"}}>{classSpec.name}</h4>
       </div>
       <div style={{position:"relative",top: -188, background: "linear-gradient(45deg,transparent,"+classSpec.colour+","+classSpec.secondColour+",transparent)", opacity: 0.8}}>
         <h3 style={{color:"white", textShadow: "-1px -1px 3px rgba(0, 0, 0, 1),2px 2px 3px rgba(0, 0, 0, 1)"}}>{character.name}</h3>

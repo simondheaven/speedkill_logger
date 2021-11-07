@@ -58,7 +58,7 @@ export const classSpecs = [
     classImage:"/img/druid.png",
     specImage:"/img/bg-druid-cat.png",
     greetingSound:"/sounds/malfurion.ogg",
-    bossKillUrlSuffix: "&class=11#class-6-feral-combat"
+    bossKillUrlSuffix: "&class=11#class-6-feral combat"
   },
   {
     id: 6,
@@ -82,7 +82,7 @@ export const classSpecs = [
     classImage: "/img/hunter.png",
     specImage: "/img/bg-hunter-beastmaster.png",
     greetingSound: "/sounds/huntergreeting.ogg",
-    bossKillUrlSuffix: "&class=3#class-6-beast-mastery"
+    bossKillUrlSuffix: "&class=3#class-6-beast mastery"
   },
   {
     id: 8,
@@ -351,7 +351,7 @@ export const classSpecs = [
   {
     id: 30,
     enum: "PROTWARR",
-    name: "Fury Warrior",
+    name: "Protection Warrior",
     overallClass: "Warrior",
     colour:"rgb(198,155,109)",
     secondColour: "rgb(235, 168, 0)",

@@ -2,6 +2,12 @@ const axios = require("axios")
 var fs = require('fs');
 const request = require('request');
 
+let argument = null;
+
+process.argv.forEach(function (val, index, array) {
+  argument = (val.trim() != "") ? val : null;
+});
+
 const bosses = [
   {
     id: 1,
@@ -206,7 +212,7 @@ function showTitle() {
   console.info(centerAlign("  "));
   console.info(centerAlign("S P E E D K I L L   L O G   G E N E R A T I O N   S C R I P T "));
   console.info(centerAlign("  "));
-  console.info(centerAlign("v2.0"));
+  console.info(centerAlign("v3.0"));
   console.info(centerAlign("  "));
   console.info(centerAlign("by Octavo"));
   console.info(centerAlign("  "));
@@ -297,10 +303,14 @@ var requestAsync = function({url, bossID, specID}) {
 let max = 0;
 let pIA = 1;
 
-var parseInnerAsync = (index, item) => {
+var parseInnerAsync = (item) => {
   return new Promise((resolve, reject) => {
     let data = {data: item.body};
-    let indexOfSearchTerm = index;
+    let indexOfSubspec = data.data.indexOf("class-6");
+    let indexOfEndOfSubspec = data.data.substr(indexOfSubspec).indexOf(",") - 1;
+    let subspec = data.data.substr(indexOfSubspec, indexOfEndOfSubspec)
+
+    let indexOfSearchTerm = item.index;
     let temp = data.data.split("").reverse().join("");
     let reverseIndexOfObjectStart = temp.substr(temp.length - indexOfSearchTerm).indexOf("{");
     let indexOfObjectStart = indexOfSearchTerm - reverseIndexOfObjectStart -1;
@@ -308,6 +318,7 @@ var parseInnerAsync = (index, item) => {
     let rankOutput = JSON.parse(data.data.substr(indexOfObjectStart, indexOfObjectEnd));
     rankOutput.classID = item.specID;
     rankOutput.bossID = item.bossID;
+    rankOutput.subspec = subspec.toLowerCase();
     bosses.find(boss => boss.id == item.bossID).ranks.push(rankOutput);
     resolve(true);
     pIA++;
@@ -328,8 +339,17 @@ var parseInnerAsync = (index, item) => {
 var parseAsync = (item) => {
   return new Promise((resolve, reject) => {
     let data = {data: item.body};
-    var indices = getIndicesOf("Speedkill", data.data, true);
-    resolve({item: item, indices: indices})
+    var indices = getIndicesOf((argument) ? argument : `"realm":"Apollo2"`, data.data, true);
+    item.indices = indices
+    resolve(item)
+  })
+}
+
+var splitAsync = (item) => {
+  return new Promise((resolve, reject) => {
+    let items = item.body.split("new Listview");
+    item.items = items;
+    resolve(item)
   })
 }
 
@@ -342,14 +362,36 @@ var getParallel = async function() {
     } catch (err) {
         console.error(err);
     }
-    showTitle();
+    console.info(centerAlign("Splitting specs..."))
+    var items = await Promise.all(dataComponent.map(splitAsync))
     console.info(centerAlign("Identifying individual records..."))
-    var parsed = await Promise.all(dataComponent.map(parseAsync))
-    for(var i=0; i<parsed.length; i++){
-      max += parsed[i].indices.length;
+    let unpacked = [];
+    for(var i=0; i<items.length; i++){
+      for(var x=0; x< items[i].items.length; x++){
+        unpacked.push({
+          bossID: items[i].bossID,
+          specID: items[i].specID,
+          body: items[i].items[x]
+        })
+      }
     }
-    var next = await Promise.all(parsed.map(p => p.indices.map(i => parseInnerAsync(i,p.item))))
-    console.log("inner parsed")
+    var parsed = await Promise.all(unpacked.map(parseAsync))
+    let trimmed = [];
+    for(var i=0; i<parsed.length; i++){
+      if (parsed[i].indices.length > 0) {
+        for(var x=0; x< parsed[i].indices.length; x++){
+          trimmed.push({
+            index: parsed[i].indices[x],
+            body: parsed[i].body,
+            bossID: parsed[i].bossID,
+            specID: parsed[i].specID
+          })
+        }
+      }
+    }
+    console.log("CHUNK LENGTH", trimmed.length)
+    max += trimmed.length
+    var next = await Promise.all(trimmed.map(parseInnerAsync))
 }
 
 
@@ -387,7 +429,6 @@ async function start() {
     }
   }
   await getParallel();
-  //return true
   //console.log(JSON.stringify(bosses))
   showTitle();
   console.info("Scraping complete, authoring data file and starting application.")

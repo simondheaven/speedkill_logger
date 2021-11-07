@@ -20,7 +20,8 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "generate": "node ./src/generate.js && npm run start"
+    "speedkill": "node ./src/generate.js Speedkill",
+    "apollo": "node ./src/generate.js \"realm\":\"Apollo2\""
   },
   "eslintConfig": {
     "extends": [
